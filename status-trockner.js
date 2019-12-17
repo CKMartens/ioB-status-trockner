@@ -4,7 +4,7 @@
   und für VIS ausgeben
   Idee aus https://forum.iobroker.net/topic/16306/gel%C3%B6st-waschetrockner-die-2-f%C3%A4llt-scheinbar-zwischen-drin-auch-immer-unter-100-watt
 
-  17.12.2019:   V0.1.0  komplette Überarbeitung
+  17.12.2019:   V0.1.1  komplette Überarbeitung
 
   to do:
 
@@ -24,13 +24,19 @@ const AKTOR_AN = 'sonoff.0.sonoff_trockner.POWER';
 const AKTOR_VERBRAUCH = 'sonoff.0.sonoff_trockner.ENERGY_Power';
 
 // Ausgabe der Fertigmeldung
-var ALEXA = true;                                                                // Ausgabe über Amazon Echo (über Adapter Alexa2)
+var ALEXA = true;                                                               // Ausgabe über Amazon Echo (über Adapter Alexa2)
 var ECHO_DEVICE = 'G090P3028452005X';
 var TELEGRAM = true;                                                            // Ausgabe über Telegram (über Adapter Telegram)
 var EMPFAENGER = 'Carsten, Elke';
 
-var checkEnde;
+// Ab welcher Wattzahl ist die Maschine fertig (Standby Verbrauch)
+var MIN_WATT = 5;
+// Ab welcher Wattzahl soll regelmäßig geprüft werden ob die Maschine fertig (Knitterschutz Verbrauch)
+var CHECK_WATT = 15;
+// Welche Wattzahl wird im lauf nicht unterschritten
+var ON_WATT = 100;
 
+var checkEnde;
 /**
   ##########         Datenpunkte          ##########
 **/
@@ -141,7 +147,7 @@ function createDp(id, common) {
 on({id: AKTOR_VERBRAUCH, change: "gt"}, function (obj) {
   if (getState('0_userdata.0.' + DP_STROMAN).val === true) {
     // Wäschetrockner läuft
-    if (getState(AKTOR_VERBRAUCH).val >= 100 && getState('0_userdata.0.' + DP_LAEUFT).val == false) {
+    if (getState(AKTOR_VERBRAUCH).val >= ON_WATT && getState('0_userdata.0.' + DP_LAEUFT).val == false) {
       setState('0_userdata.0.' + DP_FERTIG, false);
       setState('0_userdata.0.' + DP_LAEUFT, true);
       if (DEBUG === true)  console.log('Haushaltsgeräte: Wäschetrockner läuft');
@@ -151,9 +157,9 @@ on({id: AKTOR_VERBRAUCH, change: "gt"}, function (obj) {
 
 // Prüfen ob der Wäschetrockner fertig
 on({id: AKTOR_VERBRAUCH, change: "lt"}, function (obj) {
-  if (getState(AKTOR_VERBRAUCH).val < 15 && getState('0_userdata.0.' + DP_LAEUFT).val == true && checkEnde == false) {
+  if (getState(AKTOR_VERBRAUCH).val < CHECK_WATT && getState('0_userdata.0.' + DP_LAEUFT).val == true && checkEnde == false) {
     checkEnde = setTimeout(function () {
-      if (getState(AKTOR_VERBRAUCH).val < 5) {
+      if (getState(AKTOR_VERBRAUCH).val < MIN_WATT) {
         // Trockner ist Fertig
         setState('0_userdata.0.' + DP_LAEUFT, false);
         setState('0_userdata.0.' + DP_FERTIG, true);

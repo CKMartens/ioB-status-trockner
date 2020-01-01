@@ -6,7 +6,8 @@
 
   17.12.2019:   V0.1.1  komplette Überarbeitung
   20.12.2019:   V0.1.5  Debug eingefügt, Check ob Fertig überarbeitet
-  01.01.2020:   V0.1.6  Code optimiert
+  01.01.2020:   V0.2.0  Code optimiert
+  01.01.2020:   V0.2.1  Bugfix: Löschen des Timeouts
 
   to do:
 
@@ -202,6 +203,8 @@ on({id: AKTOR_VERBRAUCH, change: "lt"}, function (obj) {
           if (DEBUG === true)  console.log('Haushaltsgeräte DEBUG: Telegram Benachrichtigung gesendet');
         }
         if (LOGGING === true)  console.log('Haushaltsgeräte: Wäschetrockner ist fertig, der Strom wurde angeschaltet');
+        clearTimeout(checkEnde);
+        checkEnde = null;
       } else {
         clearTimeout(checkEnde);
         checkEnde = null;
